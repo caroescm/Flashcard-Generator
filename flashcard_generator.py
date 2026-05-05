@@ -84,6 +84,51 @@ class PDFReader:
         return page_numbers
 
 
+class AIExtractor:
+    def __init__(self, topic: str, api_key: str = None):
+        self.topic = topic
+        self.api_key = api_key
+
+    def extract(self, text: str) -> list[Flashcard]:
+
+        prompt = f"""Given the following lecture text about {self.topic}, extract all key concepts that are important for studying and comprehension. For each concept, provide:
+
+        - A clear, concise term (the concept name)
+        - A precise definition written in your own words
+
+        Return ONLY a JSON array in this format, no other text:
+        [
+        {{
+            "term": "Concept name",
+            "definition": "Clear and concise explanation of the concept"
+        }}
+        ]
+
+        Guidelines:
+        - Only include meaningful, non-trivial concepts
+        - Ensure definitions are specific to the lecture context
+        - Avoid duplicate or overlapping concepts
+        - Keep definitions concise but informative (1-3 sentences)
+
+        Lecture text:
+        {text}"""
+        
+        client = anthropic.Anthropic(api_key=self.api_key or os.environ.get("ANTHROPIC_API_KEY"))
+        message = client.messages.create(
+                     model="claude-opus-4-5",
+                    max_tokens=4096,
+                    messages=[{"role": "user", "content": prompt}]
+                    )
+
+        response_text = message.content[0].text
+        data = json.loads(response_text)
+        my_flashcards = []
+        for flashcard in data:
+            my_flashcards.append(Flashcard(flashcard["term"], flashcard["definition"]))
+        clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards))
+        return clean_ver
+
+
 def deduplicate(cards: list[Flashcard]) -> list[Flashcard]:
     """
     Remove duplicate flashcards.
@@ -134,6 +179,8 @@ class FlashcardGenerator:
         raw_text = reader.extract_text()
         clean_text = PDFReader.clean(raw_text)
         print(clean_text[:500])
+
+        ai_cards = AIExtractor(self.topic).extract(clean_text)
 
         deduplicated = deduplicate(ai_cards)
         print(len(deduplicated))
