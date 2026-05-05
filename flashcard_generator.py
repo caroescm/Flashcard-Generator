@@ -163,18 +163,14 @@ class CSVExporter:
 
     def export(self, cards: list[Flashcard]) -> None:
         """Write each card as a row: front, back"""
-        # TODO: open self.output_path for writing with csv.writer
-        #       write a header row: ["front", "back"]
-        #       loop through cards and write each as [card.front, card.back]
-        #       print how many cards were exported when done
+        with open(self.output_path, "w") as f:
+            writer = csv.writer(f)
+            writer.writerow(["front", "back"])
+            for c in cards:
+                writer.writerow([c.front, c.back])
+            
+        print(f"Exported {len(cards)} cards to {self.output_path}")
 
-        with open
-        pass
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PART 6 — Orchestrator
-# ─────────────────────────────────────────────────────────────────────────────
 
 class FlashcardGenerator:
     """Wires all the pieces together."""
