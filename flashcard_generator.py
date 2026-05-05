@@ -184,8 +184,8 @@ class FlashcardGenerator:
 
         # Step 1: extract text
         reader = PDFReader(self.pdf_path)
-        # TODO: call reader.extract_text() and store in raw_text
-        # TODO: call PDFReader.clean() on raw_text and store in clean_text
+        raw_text = reader.extract_text()
+        clean_text = PDFReader.clean(raw_text)
 
         # Step 2: run both extractors
         def_cards    = DefinitionExtractor().extract(clean_text)
