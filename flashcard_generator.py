@@ -63,9 +63,14 @@ class PDFReader:
 
     def extract_pages(self) -> list[str]:
         """Return a list of strings, one per page."""
-        # TODO: same as extract_text() but return a list instead of joining
-        #       each item in the list = one page's text (skip None pages)
-        pass
+        with pdfplumber.open(self.filepath) as file:
+            my_text = []
+            for page in file.pages:
+                text = page.extract_text()
+                if text is None:
+                    continue
+                my_text.append(text)
+        return my_text
 
     @staticmethod
     def clean(text: str) -> str:
