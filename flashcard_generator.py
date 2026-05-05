@@ -147,15 +147,16 @@ def deduplicate(cards: list[Flashcard]) -> list[Flashcard]:
     Two cards are duplicates if their fronts are the same (case-insensitive).
     When duplicates exist, keep the one with the longer back (more info).
     """
-    # TODO: use a defaultdict(list) to group cards by front.lower()
-    #       for each group, keep the card with the longest back
-    #       return the list of winners
-    pass
+    group_cards = defaultdict(list)
+    deduplicated = []
+    for card in cards:
+        group_cards[card.front.lower()].append(card)
+    for c in group_cards:
+        winner = max(group_cards[c], key=lambda x: len(x.back))
+        deduplicated.append(winner)
 
+    return deduplicated
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PART 5 — CSV Exporter
-# ─────────────────────────────────────────────────────────────────────────────
 
 class CSVExporter:
     """Writes flashcards to a .csv file ready for Anki or Quizlet import."""
