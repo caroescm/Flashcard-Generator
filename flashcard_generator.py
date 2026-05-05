@@ -75,20 +75,10 @@ class PDFReader:
     @staticmethod
     def clean(text: str) -> str:
         """Remove extra whitespace, page numbers, and junk characters."""
-        # TODO: use re.sub() to replace multiple spaces/newlines with a single space
-        #       strip leading/trailing whitespace
-        #       remove standalone page numbers (hint: r"\b\d{1,3}\b" matches them,
-        #       but be careful not to remove numbers inside sentences)
-        pass
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PART 3 — Flashcard Extractors
-#
-# Two strategies — use both and combine results:
-#   A) Definition pattern  → finds "X is/are/means/refers to Y"
-#   B) Bullet/colon pattern → finds "Term: explanation" or "- Term — explanation"
-# ─────────────────────────────────────────────────────────────────────────────
+        remove_newlines = re.sub(r"\s+" , " ", text)
+        strip_whitespace = remove_newlines.strip()
+        page_numbers = re.sub(r"\b\d{1,3}\b", "", strip_whitespace)
+        return page_numbers
 
 class DefinitionExtractor:
     """
