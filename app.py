@@ -2,20 +2,25 @@ import os
 import io
 import csv
 import tempfile
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, render_template
 from flashcard_generator import PDFReader, AIExtractor, deduplicate
 
 app = Flask(__name__)
 
 
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
 @app.route("/generate", methods=["POST"])
 def generate():
-    api_key = request.form.get("api_key") or request.headers.get("X-API-Key")
+    api_key = request.form.get("api_key")
     topic = request.form.get("topic", "")
     pdf_file = request.files.get("pdf")
 
     if not api_key:
-        return jsonify({"error": "API key required"}), 400
+        return jsonify({"error": "Gemini API key required"}), 400
     if not pdf_file:
         return jsonify({"error": "PDF file required"}), 400
 
@@ -54,4 +59,4 @@ def export():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=8080)

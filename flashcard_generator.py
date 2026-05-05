@@ -29,7 +29,7 @@ Install once:
 import re
 import csv
 import pdfplumber
-import anthropic
+from groq import Groq
 import os
 import json
 from dataclasses import dataclass
@@ -96,13 +96,15 @@ class AIExtractor:
         - A clear, concise term (the concept name)
         - A precise definition written in your own words
 
-        Return ONLY a JSON array in this format, no other text:
-        [
+        Return ONLY a JSON object in this format, no other text:
         {{
-            "term": "Concept name",
-            "definition": "Clear and concise explanation of the concept"
+            "flashcards": [
+                {{
+                    "term": "Concept name",
+                    "definition": "Clear and concise explanation of the concept"
+                }}
+            ]
         }}
-        ]
 
         Guidelines:
         - Only include meaningful, non-trivial concepts
@@ -112,16 +114,17 @@ class AIExtractor:
 
         Lecture text:
         {text}"""
-        
-        client = anthropic.Anthropic(api_key=self.api_key or os.environ.get("ANTHROPIC_API_KEY"))
-        message = client.messages.create(
-                     model="claude-opus-4-5",
-                    max_tokens=4096,
-                    messages=[{"role": "user", "content": prompt}]
-                    )
 
-        response_text = message.content[0].text
-        data = json.loads(response_text)
+        client = Groq(api_key=self.api_key or os.environ.get("GROQ_API_KEY"))
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=4096,
+        )
+
+        text = response.choices[0].message.content
+        text = text[text.find("{"):text.rfind("}") + 1]
+        data = json.loads(text)["flashcards"]
         my_flashcards = []
         for flashcard in data:
             my_flashcards.append(Flashcard(flashcard["term"], flashcard["definition"]))

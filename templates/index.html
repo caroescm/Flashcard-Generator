@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flashcard Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem;
+    }
+
+    h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 1.75rem; color: #111; }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 660px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 1.1rem;
+      transition: border-color 0.15s;
+    }
+
+    input[type="text"]:focus,
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #4f46e5;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font-size: 0.875rem;
+      margin-bottom: 1.1rem;
+      color: #555;
+    }
+
+    button {
+      padding: 0.5rem 1.1rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .btn-danger { background: #fee2e2; color: #dc2626; padding: 0.3rem 0.6rem; }
+    .btn-danger:hover { background: #fecaca; }
+
+    .row { display: flex; gap: 0.6rem; align-items: center; }
+    .spacer { flex: 1; }
+
+    #error { color: #dc2626; font-size: 0.85rem; margin-top: 0.75rem; }
+    #loading { color: #6b7280; font-size: 0.85rem; margin-top: 0.75rem; }
+
+    /* edit table */
+    table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; }
+    th {
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #aaa;
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    td { padding: 0.2rem 0.25rem; vertical-align: middle; }
+    td input {
+      width: 100%;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      padding: 0.35rem 0.5rem;
+      font-size: 0.875rem;
+      margin-bottom: 0;
+      background: transparent;
+    }
+    td input:hover { border-color: #e0e0e0; background: white; }
+    td input:focus { border-color: #4f46e5; background: white; outline: none; }
+
+    /* flip card */
+    .flip-wrap {
+      perspective: 1000px;
+      width: 100%;
+      height: 180px;
+      cursor: pointer;
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.45s;
+      transform-style: preserve-3d;
+    }
+
+    .flip-inner.flipped { transform: rotateY(180deg); }
+
+    .flip-front,
+    .flip-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1.5px solid #e5e7eb;
+      padding: 1.5rem;
+      text-align: center;
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+
+    .flip-back {
+      background: #f5f3ff;
+      border-color: #c4b5fd;
+      transform: rotateY(180deg);
+    }
+
+    .hint { font-size: 0.75rem; color: #bbb; text-align: center; }
+    .progress { font-size: 0.8rem; color: #888; }
+    .footer-note { margin-top: 1.5rem; font-size: 0.72rem; color: #bbb; text-align: center; }
+    .footer-note a { color: #bbb; }
+
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <h1>Flashcard Generator</h1>
+
+  <!-- Stage 1: Upload -->
+  <div id="upload-stage" class="card">
+    <label>Groq API Key — <a href="https://console.groq.com/keys" target="_blank">get one free</a></label>
+    <input type="password" id="api-key" placeholder="gsk_..." />
+
+    <label>Lecture PDF</label>
+    <input type="file" id="pdf-file" accept=".pdf" />
+
+    <label>Topic</label>
+    <input type="text" id="topic" placeholder="e.g. photosynthesis, binary search" />
+
+    <button class="btn-primary" onclick="generate()">Generate Flashcards</button>
+    <div id="error" hidden></div>
+    <div id="loading" hidden>Generating — this may take a moment...</div>
+
+    <p class="footer-note">Your API key is never stored or logged. &nbsp;·&nbsp; <a href="https://github.com/caroescm/Flashcard-Generator" target="_blank">View source</a></p>
+  </div>
+
+  <!-- Stage 2: Edit -->
+  <div id="edit-stage" class="card" hidden>
+    <div class="row">
+      <strong id="card-count"></strong>
+      <span class="spacer"></span>
+      <button class="btn-secondary" onclick="backToUpload()">← Back</button>
+    </div>
+
+    <table>
+      <thead><tr><th>Front</th><th>Back</th><th></th></tr></thead>
+      <tbody id="cards-body"></tbody>
+    </table>
+
+    <div class="row">
+      <button class="btn-secondary" onclick="addCard()">+ Add card</button>
+      <span class="spacer"></span>
+      <button class="btn-secondary" onclick="downloadCSV()">Download CSV</button>
+      <button class="btn-primary" onclick="startPractice()">Practice →</button>
+    </div>
+  </div>
+
+  <!-- Stage 3: Practice -->
+  <div id="practice-stage" class="card" hidden>
+    <div class="row">
+      <button class="btn-secondary" onclick="backToEdit()">← Edit</button>
+      <span class="spacer"></span>
+      <span class="progress" id="practice-progress"></span>
+    </div>
+
+    <div class="flip-wrap" onclick="flipCard()">
+      <div class="flip-inner" id="flip-inner">
+        <div class="flip-front" id="card-front"></div>
+        <div class="flip-back" id="card-back"></div>
+      </div>
+    </div>
+
+    <p class="hint">Click card to flip</p>
+
+    <div class="row" style="justify-content: center; margin-top: 1.25rem;">
+      <button class="btn-secondary" onclick="prevCard()">← Prev</button>
+      <button class="btn-primary" onclick="nextCard()">Next →</button>
+    </div>
+  </div>
+
+  <script>
+    let cards = [];
+    let practiceIndex = 0;
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.hidden = !msg;
+    }
+
+    async function generate() {
+      const apiKey = document.getElementById('api-key').value.trim();
+      const topic  = document.getElementById('topic').value.trim();
+      const file   = document.getElementById('pdf-file').files[0];
+
+      if (!apiKey || !file) { showError('API key and PDF are required.'); return; }
+
+      showError('');
+      document.getElementById('loading').hidden = false;
+
+      const form = new FormData();
+      form.append('api_key', apiKey);
+      form.append('topic', topic);
+      form.append('pdf', file);
+
+      try {
+        const res  = await fetch('/generate', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Generation failed.');
+        cards = data;
+        showEdit();
+      } catch (e) {
+        showError(e.message);
+      } finally {
+        document.getElementById('loading').hidden = true;
+      }
+    }
+
+    function showEdit() {
+      document.getElementById('upload-stage').hidden = true;
+      document.getElementById('edit-stage').hidden = false;
+      renderTable();
+    }
+
+    function backToUpload() {
+      document.getElementById('edit-stage').hidden = true;
+      document.getElementById('upload-stage').hidden = false;
+    }
+
+    function backToEdit() {
+      document.getElementById('practice-stage').hidden = true;
+      document.getElementById('edit-stage').hidden = false;
+    }
+
+    function renderTable() {
+      document.getElementById('card-count').textContent = `${cards.length} cards`;
+      const tbody = document.getElementById('cards-body');
+      tbody.innerHTML = '';
+
+      cards.forEach((card, i) => {
+        const tr = document.createElement('tr');
+
+        [['front', card.front], ['back', card.back]].forEach(([field, val]) => {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = val;
+          input.addEventListener('input', e => { cards[i][field] = e.target.value; });
+          td.appendChild(input);
+          tr.appendChild(td);
+        });
+
+        const td = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.textContent = '✕';
+        btn.className = 'btn-danger';
+        btn.addEventListener('click', () => deleteCard(i));
+        td.appendChild(btn);
+        tr.appendChild(td);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function deleteCard(i) {
+      cards.splice(i, 1);
+      renderTable();
+    }
+
+    function addCard() {
+      cards.push({ front: '', back: '' });
+      renderTable();
+    }
+
+    async function downloadCSV() {
+      const res  = await fetch('/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cards),
+      });
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = 'flashcards.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function startPractice() {
+      practiceIndex = 0;
+      document.getElementById('edit-stage').hidden = true;
+      document.getElementById('practice-stage').hidden = false;
+      showCard();
+    }
+
+    function showCard() {
+      const card = cards[practiceIndex];
+      document.getElementById('card-front').textContent = card.front;
+      document.getElementById('card-back').textContent  = card.back;
+      document.getElementById('flip-inner').classList.remove('flipped');
+      document.getElementById('practice-progress').textContent = `${practiceIndex + 1} / ${cards.length}`;
+    }
+
+    function flipCard() {
+      document.getElementById('flip-inner').classList.toggle('flipped');
+    }
+
+    function nextCard() {
+      if (practiceIndex < cards.length - 1) { practiceIndex++; showCard(); }
+    }
+
+    function prevCard() {
+      if (practiceIndex > 0) { practiceIndex--; showCard(); }
+    }
+  </script>
+</body>
+</html>
