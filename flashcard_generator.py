@@ -40,13 +40,7 @@ class Flashcard:
 
     def is_valid(self) -> bool:
         """Return True if both sides are non-empty and back has >= 4 words."""
-        if not self.front:
-            return False
-        if not self.back:
-            return False
-        if len(self.back.split()) >= 4:
-            return True
-        return False
+        return self.front and self.back and len(self.back.split()) >= 4
 
 
 class PDFReader:
@@ -57,13 +51,15 @@ class PDFReader:
 
     def extract_text(self) -> str:
         """Return all text from the PDF as one big string."""
-        # TODO: open the PDF with pdfplumber.open(self.filepath)
-        #       loop through each page and call page.extract_text()
-        #       join all page texts together with "\n" between them
-        #       handle pages where extract_text() returns None
-        #       return the full combined string
-
-        pass
+        with pdfplumber.open(self.filepath) as file:
+            my_text = []
+            for page in file.pages:
+                text = page.extract_text()
+                if text is None:
+                    continue
+                my_text.append(text)
+        
+        return "\n".join(my_text)
 
     def extract_pages(self) -> list[str]:
         """Return a list of strings, one per page."""
