@@ -29,6 +29,9 @@ Install once:
 import re
 import csv
 import pdfplumber
+import anthropic
+import os
+import json
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -80,63 +83,6 @@ class PDFReader:
         page_numbers = re.sub(r"\b\d{1,3}\b", "", strip_whitespace)
         return page_numbers
 
-class DefinitionExtractor:
-    """
-    Strategy A: regex that catches sentences like:
-      "Recursion is a function that calls itself."
-      "A lambda is an anonymous function."
-      "Polymorphism refers to the ability to..."
-    """
-
-    # Regex pattern — finds: <Term> <is/are/means/refers to> <definition>
-    PATTERN = re.compile(
-        r"([A-Z][a-zA-Z\s]{1,40}?)"          # Term: starts with capital, 2-40 chars
-        r"\s+(?:is|are|means|refers to|"       # linking verb
-        r"is defined as|is called|stands for)" #   (more variants)
-        r"\s+(.{15,200}?)"                     # Definition: 15-200 chars
-        r"(?:[.!?]|$)",                        # ends at punctuation or line end
-        re.MULTILINE
-    )
-
-    def extract(self, text: str) -> list[Flashcard]:
-        """Run the regex on text and return a list of Flashcard objects."""
-        def_tuples = self.PATTERN.findall(text)
-        my_flashcards = []
-        for item, definition in def_tuples:
-            clean_concept = item.strip()
-            clean_def= definition.strip()
-            my_flashcards.append(Flashcard(clean_concept, clean_def))
-        clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards))
-        return clean_ver
-
-
-class BulletExtractor:
-    """
-    Strategy B: finds patterns like:
-      "Term: some explanation here"
-      "- Term — some explanation here"
-      "Term → some explanation here"
-    """
-
-    PATTERN = re.compile(
-        r"^[\-\•\*]?\s*"              # optional bullet character
-        r"([A-Z][a-zA-Z\s()]{1,40}?)" # Term
-        r"\s*(?::|\—|→|–)\s*"         # separator  : — → –
-        r"(.{15,300})",                # Definition
-        re.MULTILINE
-    )
-
-    def extract(self, text: str) -> list[Flashcard]:
-        """Run the regex and return valid Flashcard objects."""
-        def_tuples = self.PATTERN.findall(text)
-        my_flashcards = []
-        for item, definition in def_tuples:
-            clean_concept = item.strip()
-            clean_def= definition.strip()
-            my_flashcards.append(Flashcard(clean_concept, clean_def))
-        clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards)) 
-        
-        return clean_ver
 
 def deduplicate(cards: list[Flashcard]) -> list[Flashcard]:
     """
@@ -182,21 +128,12 @@ class FlashcardGenerator:
     def run(self) -> None:
         print(f"\nReading: {self.pdf_path}")
 
-        # Step 1: extract text
         reader = PDFReader(self.pdf_path)
         raw_text = reader.extract_text()
         clean_text = PDFReader.clean(raw_text)
+        print(clean_text[:500])
 
-        # Step 2: run both extractors
-        def_cards    = DefinitionExtractor().extract(clean_text)
-        bullet_cards = BulletExtractor().extract(clean_text)
-
-        print(f"  Definition pattern matched : {len(def_cards)} cards")
-        print(f"  Bullet/colon pattern matched: {len(bullet_cards)} cards")
-
-        # Step 3: combine + deduplicate
-        combined = def_cards + bullet_cards
-        deduplicated = deduplicate(combined)
+        deduplicated = deduplicate(ai_cards)
         print(len(deduplicated))
 
         # Step 4: export
