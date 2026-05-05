@@ -128,9 +128,6 @@ class BulletExtractor:
 
     def extract(self, text: str) -> list[Flashcard]:
         """Run the regex and return valid Flashcard objects."""
-        # TODO: same approach as DefinitionExtractor.extract()
-        #       use self.PATTERN.findall(text)
-        #       wrap each match in a Flashcard, filter with is_valid()
         def_tuples = self.PATTERN.findall(text)
         my_flashcards = []
         for item, definition in def_tuples:
@@ -170,6 +167,8 @@ class CSVExporter:
         #       write a header row: ["front", "back"]
         #       loop through cards and write each as [card.front, card.back]
         #       print how many cards were exported when done
+
+        with open
         pass
 
 
