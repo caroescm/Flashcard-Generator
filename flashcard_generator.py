@@ -100,11 +100,15 @@ class DefinitionExtractor:
 
     def extract(self, text: str) -> list[Flashcard]:
         """Run the regex on text and return a list of Flashcard objects."""
-        # TODO: use self.PATTERN.findall(text) → returns list of (term, definition) tuples
-        #       create a Flashcard for each tuple (strip whitespace from both sides)
-        #       use filter() + Flashcard.is_valid() to remove bad ones
-        #       return the result as a list
-        pass
+        def_tuples = self.PATTERN.findall(text)
+        my_flashcards = []
+        for item, definition in def_tuples:
+            clean_concept = item.strip()
+            clean_def= definition.strip()
+            my_flashcards.append(Flashcard(clean_concept, clean_def))
+        clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards))
+
+        return clean_ver
 
 
 class BulletExtractor:
