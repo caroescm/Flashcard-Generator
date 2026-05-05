@@ -40,20 +40,14 @@ class Flashcard:
 
     def is_valid(self) -> bool:
         """Return True if both sides are non-empty and back has >= 4 words."""
-        # TODO: check that self.front and self.back are non-empty strings
-        #       AND that len(self.back.split()) >= 4
-        #       (short backs are usually noise, not real definitions)
         if not self.front:
             return False
         if not self.back:
             return False
-        if len(self.back.split()) >= 4
-        pass
+        if len(self.back.split()) >= 4:
+            return True
+        return False
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PART 2 — PDF Reader
-# ─────────────────────────────────────────────────────────────────────────────
 
 class PDFReader:
     """Extracts and cleans text from a PDF file."""
