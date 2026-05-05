@@ -195,19 +195,15 @@ class FlashcardGenerator:
         print(f"  Bullet/colon pattern matched: {len(bullet_cards)} cards")
 
         # Step 3: combine + deduplicate
-        # TODO: combine def_cards and bullet_cards into one list
-        # TODO: call deduplicate() on the combined list
-        # TODO: print how many unique cards remain
+        combined = def_cards + bullet_cards
+        deduplicated = deduplicate(combined)
+        print(len(deduplicated))
 
         # Step 4: export
-        # TODO: create a CSVExporter and call .export() with the deduplicated cards
+        CSVExporter(self.output_path).export(deduplicated)
 
         print(f"\nDone! Open '{self.output_path}' and import into Anki or Quizlet.")
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PART 7 — Main
-# ─────────────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     pdf_path = input("Enter path to your lecture PDF: ").strip()
