@@ -141,11 +141,6 @@ class BulletExtractor:
         
         return clean_ver
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# PART 4 — Deduplicator
-# ─────────────────────────────────────────────────────────────────────────────
-
 def deduplicate(cards: list[Flashcard]) -> list[Flashcard]:
     """
     Remove duplicate flashcards.
