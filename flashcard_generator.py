@@ -107,7 +107,6 @@ class DefinitionExtractor:
             clean_def= definition.strip()
             my_flashcards.append(Flashcard(clean_concept, clean_def))
         clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards))
-
         return clean_ver
 
 
@@ -132,7 +131,15 @@ class BulletExtractor:
         # TODO: same approach as DefinitionExtractor.extract()
         #       use self.PATTERN.findall(text)
         #       wrap each match in a Flashcard, filter with is_valid()
-        pass
+        def_tuples = self.PATTERN.findall(text)
+        my_flashcards = []
+        for item, definition in def_tuples:
+            clean_concept = item.strip()
+            clean_def= definition.strip()
+            my_flashcards.append(Flashcard(clean_concept, clean_def))
+        clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards)) 
+        
+        return clean_ver
 
 
 # ─────────────────────────────────────────────────────────────────────────────
