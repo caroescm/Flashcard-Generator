@@ -206,7 +206,7 @@ class FlashcardGenerator:
 
 
 def main() -> None:
-    pdf_path = input("Enter path to your lecture PDF: ").strip()
+    pdf_path = input("Enter path to your lecture PDF: ").strip().strip("'\"")
 
     output = input("Output filename? [default: flashcards.csv]: ").strip()
     if not output:
