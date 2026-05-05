@@ -121,9 +121,11 @@ class CSVExporter:
 class FlashcardGenerator:
     """Wires all the pieces together."""
 
-    def __init__(self, pdf_path: str, output_path: str = "flashcards.csv"):
-        self.pdf_path    = pdf_path
+    def __init__(self, pdf_path: str, output_path: str = "flashcards.csv", topic: str = ""):
+        self.pdf_path = pdf_path
         self.output_path = output_path
+        self.topic = topic
+
 
     def run(self) -> None:
         print(f"\nReading: {self.pdf_path}")
@@ -145,12 +147,14 @@ class FlashcardGenerator:
 def main() -> None:
     pdf_path = input("Enter path to your lecture PDF: ").strip().strip("'\"")
 
+    topic = input("What is this lecture about? (e.g. 'binary search', 'photosynthesis'): ").strip()
+
     output = input("Output filename? [default: flashcards.csv]: ").strip()
     if not output:
         output = "flashcards.csv"
 
     try:
-        generator = FlashcardGenerator(pdf_path, output)
+        generator = FlashcardGenerator(pdf_path, output, topic)
         generator.run()
     except FileNotFoundError:
         print(f"Error: '{pdf_path}' not found.")
