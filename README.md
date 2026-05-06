@@ -46,6 +46,15 @@ Then open `http://localhost:8080`.
 
 Get a free Groq API key at [console.groq.com/keys](https://console.groq.com/keys).
 
+### OCR support for image-based slides
+
+If a PDF page has little or no selectable text, the app can fall back to OCR to
+read text from slide images or scanned pages.
+
+Install the Python packages from `requirements.txt`, then make sure the
+`tesseract` command is also installed on your system. If Tesseract is missing,
+the app still works for normal text-based PDFs, but OCR fallback will be skipped.
+
 ## Deploying to Render
 
 1. Fork this repo

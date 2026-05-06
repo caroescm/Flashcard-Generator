@@ -23,8 +23,25 @@ import pdfplumber
 from groq import Groq  #  We will be conenecting to Groq's API
 import os
 import json
+import io
+import shutil
 from dataclasses import dataclass
 from collections import defaultdict
+
+try:
+    import fitz  # PyMuPDF
+except ImportError:
+    fitz = None
+
+try:
+    import pytesseract
+except ImportError:
+    pytesseract = None
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 
 @dataclass
@@ -48,9 +65,13 @@ class PDFReader:
         """Return all text from the PDF as one big string."""
         with pdfplumber.open(self.filepath) as file:
             my_text = []
-            for page in file.pages:
+            for page_num, page in enumerate(file.pages):
                 # Some PDF pages may fail to extract text cleanly, so we skip blanks.
                 text = page.extract_text()
+                # If a page has little or no selectable text, try OCR to read
+                # words that may only exist inside an image.
+                if self._needs_ocr(text):
+                    text = self.ocr_page(page_num) or text
                 if text is None:
                     continue
                 my_text.append(text)
@@ -68,6 +89,38 @@ class PDFReader:
                     continue
                 my_text.append(text)
         return my_text
+
+    @staticmethod
+    def _needs_ocr(text: str | None) -> bool:
+        """Return True when extracted text is missing or too small to be useful."""
+        return not text or len(text.strip()) < 20
+
+    @staticmethod
+    def ocr_available() -> bool:
+        """Return True if the OCR libraries and Tesseract binary are available."""
+        return (
+            fitz is not None
+            and pytesseract is not None
+            and Image is not None
+            and shutil.which("tesseract") is not None
+        )
+
+    def ocr_page(self, page_num: int) -> str:
+        """Render one PDF page as an image and read it with OCR."""
+        if not self.ocr_available():
+            return ""
+
+        doc = fitz.open(self.filepath)
+        try:
+            page = doc.load_page(page_num)
+            # Render at a higher resolution so OCR can read slide text more reliably.
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+            image_bytes = pixmap.tobytes("png")
+        finally:
+            doc.close()
+
+        image = Image.open(io.BytesIO(image_bytes))
+        return pytesseract.image_to_string(image)
 
     @staticmethod
     def clean(text: str) -> str:
@@ -215,6 +268,8 @@ def main() -> None:
         output = "flashcards.csv"
 
     try:
+        if not PDFReader.ocr_available():
+            print("Note: OCR fallback is unavailable. Image-only PDF pages may not extract well.")
         generator = FlashcardGenerator(pdf_path, output, topic)
         generator.run()
     except FileNotFoundError:
