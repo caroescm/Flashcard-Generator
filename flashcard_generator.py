@@ -35,6 +35,7 @@ import json
 from dataclasses import dataclass
 from collections import defaultdict
 
+
 @dataclass
 class Flashcard:
     """One flashcard: a front (term) and a back (definition)."""
@@ -57,11 +58,12 @@ class PDFReader:
         with pdfplumber.open(self.filepath) as file:
             my_text = []
             for page in file.pages:
+                # Some PDF pages may fail to extract text cleanly, so we skip blanks.
                 text = page.extract_text()
                 if text is None:
                     continue
                 my_text.append(text)
-        
+
         return "\n".join(my_text)
 
     def extract_pages(self) -> list[str]:
@@ -69,6 +71,7 @@ class PDFReader:
         with pdfplumber.open(self.filepath) as file:
             my_text = []
             for page in file.pages:
+                # Keep each page separate in case we want page-by-page processing later.
                 text = page.extract_text()
                 if text is None:
                     continue
@@ -78,18 +81,24 @@ class PDFReader:
     @staticmethod
     def clean(text: str) -> str:
         """Remove extra whitespace, page numbers, and junk characters."""
+        # Collapse newlines/tabs/multiple spaces into single spaces so the AI
+        # sees one cleaner block of lecture text.
         remove_newlines = re.sub(r"\s+" , " ", text)
         strip_whitespace = remove_newlines.strip()
+        # Remove standalone numbers that are likely page numbers.
         page_numbers = re.sub(r"\b\d{1,3}\b", "", strip_whitespace)
         return page_numbers
 
 
 class AIExtractor:
+    """Uses the Groq API to turn lecture text into study flashcards."""
+
     def __init__(self, topic: str):
         self.topic = topic
 
     def extract(self, text: str) -> list[Flashcard]:
-
+        # The prompt asks the model to return structured JSON so we can parse it
+        # directly into Flashcard objects.
         prompt = f"""Given the following lecture text about {self.topic}, extract all key concepts that are important for studying and comprehension. For each concept, provide:
 
         - A clear, concise term (the concept name)
@@ -117,16 +126,19 @@ class AIExtractor:
         client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": prompt[:40000]}],
             max_tokens=4096,
         )
 
+        # Models sometimes wrap JSON in extra text, so we grab only the JSON
+        # object between the first "{" and the last "}".
         text = response.choices[0].message.content
         text = text[text.find("{"):text.rfind("}") + 1]
         data = json.loads(text)["flashcards"]
         my_flashcards = []
         for flashcard in data:
             my_flashcards.append(Flashcard(flashcard["term"], flashcard["definition"]))
+        # Filter out incomplete or too-short cards before exporting.
         clean_ver = list(filter(lambda x: x.is_valid(), my_flashcards))
         return clean_ver
 
@@ -140,8 +152,10 @@ def deduplicate(cards: list[Flashcard]) -> list[Flashcard]:
     group_cards = defaultdict(list)
     deduplicated = []
     for card in cards:
+        # Group cards by lowercase front so "DNA" and "dna" count as duplicates.
         group_cards[card.front.lower()].append(card)
     for c in group_cards:
+        # If duplicates exist, keep the version with the most detailed answer.
         winner = max(group_cards[c], key=lambda x: len(x.back))
         deduplicated.append(winner)
 
@@ -156,6 +170,7 @@ class CSVExporter:
 
     def export(self, cards: list[Flashcard]) -> None:
         """Write each card as a row: front, back"""
+        # csv.writer handles commas/quotes safely for Anki and Quizlet imports.
         with open(self.output_path, "w") as f:
             writer = csv.writer(f)
             writer.writerow(["front", "back"])
@@ -177,23 +192,29 @@ class FlashcardGenerator:
     def run(self) -> None:
         print(f"\nReading: {self.pdf_path}")
 
+        # 1. Read the PDF and flatten it into raw text.
         reader = PDFReader(self.pdf_path)
         raw_text = reader.extract_text()
+
+        # 2. Clean the text before sending it to the AI model.
         clean_text = PDFReader.clean(raw_text)
         print(clean_text[:500])
 
+        # 3. Ask the model to turn the lecture into flashcards.
         ai_cards = AIExtractor(self.topic).extract(clean_text)
 
+        # 4. Remove repeated concepts so the export stays clean.
         deduplicated = deduplicate(ai_cards)
         print(len(deduplicated))
 
-        # Step 4: export
+        # 5. Export the final cards to CSV.
         CSVExporter(self.output_path).export(deduplicated)
 
         print(f"\nDone! Open '{self.output_path}' and import into Anki or Quizlet.")
 
 
 def main() -> None:
+    # Collect the minimum input needed to run the generator from the terminal.
     pdf_path = input("Enter path to your lecture PDF: ").strip().strip("'\"")
 
     topic = input("What is this lecture about? (e.g. 'binary search', 'photosynthesis'): ").strip()
@@ -208,6 +229,7 @@ def main() -> None:
     except FileNotFoundError:
         print(f"Error: '{pdf_path}' not found.")
     except Exception as e:
+        # Catch-all so the script fails gracefully instead of crashing with a traceback.
         print(f"Something went wrong: {e}")
 
 
