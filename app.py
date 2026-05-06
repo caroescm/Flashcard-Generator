@@ -11,6 +11,10 @@ app = Flask(__name__)
 
 limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
+@app.errorhandler(429)
+def rate_limit_exceeded(e):
+    return jsonify({"error": "You've reached the limit of 3 PDFs per day. Come back tomorrow!"}), 429
+
 
 @app.route("/")
 def index():
