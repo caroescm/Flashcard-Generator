@@ -3,9 +3,13 @@ import io
 import csv
 import tempfile
 from flask import Flask, request, jsonify, Response, render_template
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flashcard_generator import PDFReader, AIExtractor, deduplicate
 
 app = Flask(__name__)
+
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
 
 @app.route("/")
@@ -14,13 +18,11 @@ def index():
 
 
 @app.route("/generate", methods=["POST"])
+@limiter.limit("3 per day")
 def generate():
-    api_key = request.form.get("api_key")
     topic = request.form.get("topic", "")
     pdf_file = request.files.get("pdf")
 
-    if not api_key:
-        return jsonify({"error": "Gemini API key required"}), 400
     if not pdf_file:
         return jsonify({"error": "PDF file required"}), 400
 
@@ -31,7 +33,7 @@ def generate():
     try:
         raw_text = PDFReader(tmp_path).extract_text()
         clean_text = PDFReader.clean(raw_text)
-        cards = deduplicate(AIExtractor(topic, api_key=api_key).extract(clean_text))
+        cards = deduplicate(AIExtractor(topic).extract(clean_text))
         return jsonify([{"front": c.front, "back": c.back} for c in cards])
     except Exception as e:
         return jsonify({"error": str(e)}), 500

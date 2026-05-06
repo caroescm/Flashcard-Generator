@@ -85,9 +85,8 @@ class PDFReader:
 
 
 class AIExtractor:
-    def __init__(self, topic: str, api_key: str = None):
+    def __init__(self, topic: str):
         self.topic = topic
-        self.api_key = api_key
 
     def extract(self, text: str) -> list[Flashcard]:
 
@@ -115,7 +114,7 @@ class AIExtractor:
         Lecture text:
         {text}"""
 
-        client = Groq(api_key=self.api_key or os.environ.get("GROQ_API_KEY"))
+        client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],

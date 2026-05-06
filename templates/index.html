@@ -166,9 +166,6 @@
 
   <!-- Stage 1: Upload -->
   <div id="upload-stage" class="card">
-    <label>Groq API Key — <a href="https://console.groq.com/keys" target="_blank">get one free</a></label>
-    <input type="password" id="api-key" placeholder="gsk_..." />
-
     <label>Lecture PDF</label>
     <input type="file" id="pdf-file" accept=".pdf" />
 
@@ -237,17 +234,15 @@
     }
 
     async function generate() {
-      const apiKey = document.getElementById('api-key').value.trim();
-      const topic  = document.getElementById('topic').value.trim();
-      const file   = document.getElementById('pdf-file').files[0];
+      const topic = document.getElementById('topic').value.trim();
+      const file  = document.getElementById('pdf-file').files[0];
 
-      if (!apiKey || !file) { showError('API key and PDF are required.'); return; }
+      if (!file) { showError('Please select a PDF.'); return; }
 
       showError('');
       document.getElementById('loading').hidden = false;
 
       const form = new FormData();
-      form.append('api_key', apiKey);
       form.append('topic', topic);
       form.append('pdf', file);
 
