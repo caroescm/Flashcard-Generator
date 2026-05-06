@@ -20,7 +20,7 @@ Install once:
 import re
 import csv
 import pdfplumber
-from groq import Groq
+from groq import Groq  #  We will be conenecting to Groq's API
 import os
 import json
 from dataclasses import dataclass
