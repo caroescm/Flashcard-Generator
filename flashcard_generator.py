@@ -122,7 +122,15 @@ class AIExtractor:
         )
 
         text = response.choices[0].message.content
-        text = text[text.find("{"):text.rfind("}") + 1]
+        if not text:
+            raise ValueError("The AI returned an empty response.")
+
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end < start:
+            raise ValueError("The AI did not return valid JSON.")
+
+        text = text[start:end + 1]
         data = json.loads(text)["flashcards"]
         my_flashcards = []
         for flashcard in data:
