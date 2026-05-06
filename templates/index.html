@@ -264,7 +264,16 @@
 
       try {
         const res  = await fetch('/generate', { method: 'POST', body: form });
-        const data = await res.json();
+        const raw = await res.text();
+        let data = null;
+
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          const snippet = raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+          throw new Error(snippet || 'The server returned an unexpected response.');
+        }
+
         if (!res.ok) throw new Error(data.error || 'Generation failed.');
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error('No flashcards were generated from this PDF.');
