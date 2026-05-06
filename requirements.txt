@@ -2,6 +2,3 @@ flask
 groq
 gunicorn
 pdfplumber
-Pillow
-PyMuPDF
-pytesseract

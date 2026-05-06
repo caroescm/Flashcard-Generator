@@ -46,28 +46,12 @@ Then open `http://localhost:8080`.
 
 Get a free Groq API key at [console.groq.com/keys](https://console.groq.com/keys).
 
-### OCR support for image-based slides
-
-If a PDF page has little or no selectable text, the app can fall back to OCR to
-read text from slide images or scanned pages.
-
-Install the Python packages from `requirements.txt`, then make sure the
-`tesseract` command is also installed on your system. If Tesseract is missing,
-the app still works for normal text-based PDFs, but OCR fallback will be skipped.
-
 ## Deploying to Render
 
-This project uses Docker on Render so the deployed app includes Tesseract for OCR.
-
-1. Push this repo to GitHub
-2. In Render, create a new Web Service and choose the `Docker` runtime
-3. Connect the repo and let Render use the root `Dockerfile`
-4. Add `GROQ_API_KEY` as an environment variable in the Render dashboard
-5. Deploy
-
-If you already created this app on Render as a native Python service, you will
-usually need to create a new Docker-based service or recreate the existing one,
-because Render does not let you change a service runtime after creation.
+1. Fork this repo
+2. Create a new Web Service on [render.com](https://render.com) and connect your fork
+3. Add `GROQ_API_KEY` as an environment variable in the Render dashboard
+4. Deploy
 
 ## Tech Stack
 

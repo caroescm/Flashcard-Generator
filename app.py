@@ -11,7 +11,6 @@ app = Flask(__name__)
 
 DAILY_LIMIT = 3
 _usage = defaultdict(dict)
-MIN_TEXT_LENGTH = 80
 
 
 def _today():
@@ -57,30 +56,7 @@ def generate():
     try:
         raw_text = PDFReader(tmp_path).extract_text()
         clean_text = PDFReader.clean(raw_text)
-        if len(clean_text.strip()) < MIN_TEXT_LENGTH:
-            if not PDFReader.ocr_available():
-                return jsonify({
-                    "error": (
-                        "This PDF does not appear to contain enough selectable text. "
-                        "It may be image-based, and OCR is not installed in the current environment."
-                    )
-                }), 422
-            return jsonify({
-                "error": (
-                    "I could not extract enough readable text from this PDF. "
-                    "Try a clearer PDF or one with selectable text."
-                )
-            }), 422
-
         cards = deduplicate(AIExtractor(topic).extract(clean_text))
-        if not cards:
-            return jsonify({
-                "error": (
-                    "The PDF text was read, but no strong flashcards were generated. "
-                    "Try a more specific topic or a PDF with clearer text."
-                )
-            }), 422
-
         _increment(ip)
         return jsonify([{"front": c.front, "back": c.back} for c in cards])
     except Exception as e:
