@@ -13,15 +13,6 @@ How Quizlet import works:
   2. Quizlet → Create → Import → paste contents of flashcards.csv
   3. Set "Between term and definition" = comma, "Between rows" = newline → done!
 
-Concepts practiced:
-  - OOP (classes, __init__, methods)
-  - Regex (re module) — for finding definitions and key terms
-  - File I/O — reading PDFs, writing CSV
-  - List comprehensions + filter/map
-  - defaultdict
-  - Error handling (try/except)
-  - String methods
-
 Install once:
   pip install pdfplumber
 """
