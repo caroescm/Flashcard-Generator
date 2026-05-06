@@ -12,7 +12,7 @@ Upload a lecture PDF and instantly get AI-generated flashcards. Edit them, downl
 
 ## Live Demo
 
-[flashcard-generator.onrender.com](https://flashcard-generator.onrender.com)
+[flashcard-generator.onrender.com](https://flashcard-generator-xu18.onrender.com/)
 
 ## How to Use
 
