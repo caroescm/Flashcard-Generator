@@ -266,6 +266,9 @@
         const res  = await fetch('/generate', { method: 'POST', body: form });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Generation failed.');
+        if (!Array.isArray(data) || data.length === 0) {
+          throw new Error('No flashcards were generated from this PDF.');
+        }
         cards = data;
         updateQuota();
         showEdit();
