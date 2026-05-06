@@ -1,5 +1,4 @@
 flask
-flask-limiter
 groq
 gunicorn
 pdfplumber

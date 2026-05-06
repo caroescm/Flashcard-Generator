@@ -2,18 +2,28 @@ import os
 import io
 import csv
 import tempfile
+from collections import defaultdict
+from datetime import date
 from flask import Flask, request, jsonify, Response, render_template
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flashcard_generator import PDFReader, AIExtractor, deduplicate
 
 app = Flask(__name__)
 
-limiter = Limiter(get_remote_address, app=app, default_limits=[])
+DAILY_LIMIT = 3
+_usage = defaultdict(dict)
 
-@app.errorhandler(429)
-def rate_limit_exceeded(e):
-    return jsonify({"error": "You've reached the limit of 3 PDFs per day. Come back tomorrow!"}), 429
+
+def _today():
+    return str(date.today())
+
+
+def _get_count(ip):
+    return _usage[ip].get(_today(), 0)
+
+
+def _increment(ip):
+    today = _today()
+    _usage[ip][today] = _usage[ip].get(today, 0) + 1
 
 
 @app.route("/")
@@ -21,9 +31,18 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/remaining")
+def remaining():
+    count = _get_count(request.remote_addr)
+    return jsonify({"remaining": DAILY_LIMIT - count, "limit": DAILY_LIMIT})
+
+
 @app.route("/generate", methods=["POST"])
-@limiter.limit("3 per day")
 def generate():
+    ip = request.remote_addr
+    if _get_count(ip) >= DAILY_LIMIT:
+        return jsonify({"error": "You've reached the limit of 3 PDFs per day. Come back tomorrow!"}), 429
+
     topic = request.form.get("topic", "")
     pdf_file = request.files.get("pdf")
 
@@ -38,6 +57,7 @@ def generate():
         raw_text = PDFReader(tmp_path).extract_text()
         clean_text = PDFReader.clean(raw_text)
         cards = deduplicate(AIExtractor(topic).extract(clean_text))
+        _increment(ip)
         return jsonify([{"front": c.front, "back": c.back} for c in cards])
     except Exception as e:
         return jsonify({"error": str(e)}), 500

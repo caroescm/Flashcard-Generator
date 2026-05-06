@@ -173,10 +173,11 @@
     <input type="text" id="topic" placeholder="e.g. photosynthesis, binary search" />
 
     <button class="btn-primary" onclick="generate()">Generate Flashcards</button>
+    <div id="quota" style="margin-top:0.75rem; font-size:0.8rem; color:#888;"></div>
     <div id="error" hidden></div>
     <div id="loading" hidden>Generating — this may take a moment...</div>
 
-    <p class="footer-note">Your API key is never stored or logged. &nbsp;·&nbsp; <a href="https://github.com/caroescm/Flashcard-Generator" target="_blank">View source</a></p>
+    <p class="footer-note"><a href="https://github.com/caroescm/Flashcard-Generator" target="_blank">View source</a></p>
   </div>
 
   <!-- Stage 2: Edit -->
@@ -227,6 +228,21 @@
     let cards = [];
     let practiceIndex = 0;
 
+    async function updateQuota() {
+      const res = await fetch('/remaining');
+      const data = await res.json();
+      const el = document.getElementById('quota');
+      if (data.remaining === 0) {
+        el.textContent = "You've used all 3 generations for today. Come back tomorrow!";
+        el.style.color = '#dc2626';
+      } else {
+        el.textContent = `${data.remaining} of ${data.limit} free generations remaining today.`;
+        el.style.color = '#888';
+      }
+    }
+
+    updateQuota();
+
     function showError(msg) {
       const el = document.getElementById('error');
       el.textContent = msg;
@@ -251,6 +267,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Generation failed.');
         cards = data;
+        updateQuota();
         showEdit();
       } catch (e) {
         showError(e.message);
