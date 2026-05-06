@@ -1,6 +1,6 @@
 services:
   - type: web
     name: flashcard-generator
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
