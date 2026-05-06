@@ -58,6 +58,9 @@ class Flashcard:
 class PDFReader:
     """Extracts and cleans text from a PDF file."""
 
+    OCR_ZOOM = 1.5
+    OCR_TIMEOUT_SECONDS = 20
+
     def __init__(self, filepath: str):
         self.filepath = filepath
 
@@ -113,14 +116,20 @@ class PDFReader:
         doc = fitz.open(self.filepath)
         try:
             page = doc.load_page(page_num)
-            # Render at a higher resolution so OCR can read slide text more reliably.
-            pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+            # Render at a moderate resolution so OCR still captures slide text
+            # without producing images so large that hosted requests time out.
+            pixmap = page.get_pixmap(matrix=fitz.Matrix(self.OCR_ZOOM, self.OCR_ZOOM))
             image_bytes = pixmap.tobytes("png")
         finally:
             doc.close()
 
         image = Image.open(io.BytesIO(image_bytes))
-        return pytesseract.image_to_string(image)
+        config = "--psm 6"
+        return pytesseract.image_to_string(
+            image,
+            config=config,
+            timeout=self.OCR_TIMEOUT_SECONDS,
+        )
 
     @staticmethod
     def clean(text: str) -> str:
