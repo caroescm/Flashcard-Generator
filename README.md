@@ -1,6 +1,6 @@
 # Flashcard Generator
 
-Upload a lecture PDF and instantly get AI-generated flashcards. Edit them, download as CSV for Anki or Quizlet, or practice directly in the browser.
+Upload a lecture PDF and instantly get AI-generated flashcards. Edit them, download as CSV for Anki or Quizlet, or practice directly in the browser. Free to use.
 
 ## Features
 
